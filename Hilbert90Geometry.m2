@@ -10,7 +10,7 @@ newPackage(
 		{Name => "Daniel Rostamloo", Email => "rostam@uw.edu", Homepage => "drostamloo.github.io"}},
 		AuxiliaryFiles => false,
 		DebuggingMode => true,
-		PackageExports => {"RationalPoints2", "PushForward"}
+		PackageExports => {"RationalPoints2", "PushForward", "RationalMaps"}
 		)
 
 export {
@@ -71,8 +71,7 @@ multExtMod = method()
 multExtMod(Ring, Ring, RingMap, Matrix) := (L, K, f, coefs) -> (
 	n := numgens K;
 	fieldGens := matrix{apply(n, i -> (L_0)^i)};
-	alpha := fieldGens * transpose(coefs);
-	pushFwd(f, alpha)
+	alpha := fieldGens * transpose(coefs); pushFwd(f, alpha)
 )
 
 hilbertCoordinates = method()
@@ -84,9 +83,7 @@ hilbertCoordinates(ZZ, ZZ) := (p, n) -> (
 		N := det mult;
 		Tcoefs := transpose coefs;
 		factors := multExtMod(L, K, f, coefs);
-		gal * Tcoefs;
-		factors := multExtMod(L, K, f, transpose (gal^2 * Tcoefs)) * factors;
-		for i in 2..n do factors := multExtMod(L, K, f, transpose (gal^i * Tcoefs)) * factors;
+		for i in 2..n do factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
 		N * factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) }
 )
 
@@ -153,16 +150,23 @@ installPackage "Hilbert90Geometry"
 viewHelp "Hilbert90Geometry"
 
 
-load "RationalPoints2.m2"
-load "PushForward.m2"
+loadPackage "RationalPoints2"
+loadPackage "PushForward"
+loadPackage "RationalMaps"
 
-(L, K, f, M, g, pf) = extMod(3,3)
-gal = galExtMod(K, M)
-coefs = matrix{for i in 0..2 list f(K_i)}
-mult = multExtMod(L, K, f, coefs)
-N = det mult
-Tcoefs = transpose coefs
-factors = multExtMod(L, K, f, coefs)
-for i in 2..3 do factors = multExtMod(L, K, f, transpose (gal^i * Tcoefs)) * factors
+hilb = transpose hilbertCoordinates(2,2)
+R = ring hilb
+P2 = Proj R
+phi = rationalMapping(P2, P2, hilb)
+val = isBirationalMap(phi)
+val2 = isBirationalOntoImage(phi)
+clo = isEmbedding(phi)
+alpha = mapOntoImage(phi)
+baseLocusOfMap phi
 
-N * factors * transpose matrix{ join( {1}, for i in 2 .. 3 list 0 ) }
+R = ZZ/11[x,y,z]
+P2 = Proj R
+phi1 = rationalMapping(P2, P2, {y*z, x*z, x*y})
+phi2 = rationalMapping(R, R, matrix{{y*z, x*z, x*y}})
+
+isBirationalMap phi1
