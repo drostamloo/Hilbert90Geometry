@@ -79,15 +79,15 @@ multExtMod(Ring, Ring, RingMap, Matrix) := (L, K, f, coefs) -> (
 
 hilbertCoordinates = method()
 hilbertCoordinates(ZZ, ZZ) := (p, n) -> (
-		(L, K, f, M, g, pf) := extMod(p, n);
-		gal := galExtMod(K, M);
-		coefs := matrix{for i in 0..(n-1) list f(K_i)};
-		mult := multExtMod(L, K, f, coefs);
-		N := det mult;
-		Tcoefs := transpose coefs;
-		factors := multExtMod(L, K, f, coefs);
-		for i in 2..n do factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
-		matrix {{N}} | transpose(factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) })
+	(L, K, f, M, g, pf) := extMod(p, n);
+	gal := galExtMod(K, M);
+	coefs := matrix{for i in 0..(n-1) list f(K_i)};
+	mult := multExtMod(L, K, f, coefs);
+	N := det mult;
+	Tcoefs := transpose coefs;
+	factors := multExtMod(L, K, f, coefs);
+	for i in 2..n do factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
+	matrix {{N}} | transpose(factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) })
 )
 
 isBirationalEmbedding = method()
@@ -104,7 +104,7 @@ isBirationalEmbedding(ZZ, ZZ) := (p, n) -> (
 	Y := Proj S';
 	phi := rationalMapping(Y,X,hilb);
 
-	(isBirationalMap phi, isEmbedding phi)
+	(isBirationalMap(phi, Verbosity => 0, AssumeDominant => true), isEmbedding(phi, Verbosity => 0, AssumeDominant => true))
 )
 
 -* Documentation section *-
@@ -175,28 +175,23 @@ loadPackage "Hilbert90Geometry"
 -- loadPackage "RationalMaps"
 -- loadPackage "MultiprojectiveVarieties"
 
-p = 3; n = 5;
+p = 17; n = 3;
 
 (L, K, f, M, g, pf) = extMod(p,n)
 hilb = hilbertCoordinates(p,n)
 R = ring hilb
 variables = join( for i in 0..(n-1) list R_i, {y} )
-S = ZZ/3[variables]
+S = ZZ/p[variables]
 f = map(S, R)
 N = ideal(f(hilb_(0,0)) - y^n)
-S = S/N
+S' = S/N
 
 X = Proj R
-Y = Proj S 
+Y = Proj S'
 phi = rationalMapping(Y,X,hilb)
 I = radical baseLocusOfMap phi
 
-src = Proj R/(radical baseLocusOfMap(phi))
-S' = singularLocus I
-dim S'
-
-
 isBirationalMap phi
 isEmbedding phi
+mapOntoImage phi
 isBirationalOntoImage phi
-rationalPoints(I, Projective => true)
