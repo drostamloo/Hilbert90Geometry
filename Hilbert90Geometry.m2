@@ -10,7 +10,7 @@ newPackage(
 		{Name => "Daniel Rostamloo", Email => "rostam@uw.edu", Homepage => "drostamloo.github.io"}},
 		AuxiliaryFiles => false,
 		DebuggingMode => true,
-		PackageExports => {"RationalPoints2", "PushForward", "RationalMaps"}
+		PackageExports => {"RationalPoints2", "PushForward", "RationalMaps", "MultiprojectiveVarieties"}
 		)
 
 export {
@@ -19,7 +19,8 @@ export {
 	"galExtModAS", -- the Artin-Schreier case of galExtMod
 	"galExtModKummer", -- the Kummer case of galExtMod
 	"multExtMod", -- produces the matrix over the ground field associated to multiplication by an element of the field extension with a choice of coefficients
-	"hilbertCoordinates" -- produces a matrix representing the coordinates of the mapping given by interpreting Hilbert's Theorem 90 geometrically
+	"hilbertCoordinates", -- produces a matrix representing the coordinates of the mapping given by interpreting Hilbert's Theorem 90 geometrically
+	"isBirationalEmbedding" -- returns a pair of truth values indicating whether the rational map given by hilbertCoordinates is in fact birational or a closed embedding, respectively
 	}
 
 -* Code section *-
@@ -31,7 +32,7 @@ extMod(ZZ, ZZ) := (p, n) -> (
 	x := symbol x;
 
 	k := (ZZ/p)[t];
-	k' := extField({t^n-1}, Variable => t);
+	k' := extField(t^n-1, Variable=>t);
 	K := k'[a_0 .. a_(n-1)];
 	l := ambient GF(p,n,Variable => x);
 	S := ambient l;
@@ -61,9 +62,11 @@ galExtModAS(Ring, Module) := (K, M) -> (
 
 galExtModKummer = method()
 galExtModKummer(Ring, Module) := (K, M) -> (
-	t := symbol t;
+	k' := baseRing K;
+	t := k'_0;
+	inc := map(K, k');
 	n := rank M;
-	zetas := for i in 0 .. n-1 list t^i;
+	zetas := for i in 0..(n-1) list inc(t^i);
 	diagonalMatrix(K, zetas)
 )
 
@@ -84,7 +87,24 @@ hilbertCoordinates(ZZ, ZZ) := (p, n) -> (
 		Tcoefs := transpose coefs;
 		factors := multExtMod(L, K, f, coefs);
 		for i in 2..n do factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
-		N * factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) }
+		matrix {{N}} | transpose(factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) })
+)
+
+isBirationalEmbedding = method()
+isBirationalEmbedding(ZZ, ZZ) := (p, n) -> (
+	hilb := hilbertCoordinates(p, n);
+	R := ring hilb;
+	y := symbol y;
+	variables := join( for i in 0..(n-1) list R_i, {y} );
+	S := ZZ/p[variables];
+	f := map(S, R);
+	N := ideal(f(hilb_(0,0)) - y^n);
+	S' := S/N;
+	X := Proj R;
+	Y := Proj S';
+	phi := rationalMapping(Y,X,hilb);
+
+	(isBirationalMap phi, isEmbedding phi)
 )
 
 -* Documentation section *-
@@ -149,24 +169,34 @@ restart
 installPackage "Hilbert90Geometry"
 viewHelp "Hilbert90Geometry"
 
+loadPackage "Hilbert90Geometry"
+-- loadPackage "RationalPoints2"
+-- loadPackage "PushForward"
+-- loadPackage "RationalMaps"
+-- loadPackage "MultiprojectiveVarieties"
 
-loadPackage "RationalPoints2"
-loadPackage "PushForward"
-loadPackage "RationalMaps"
+p = 3; n = 5;
 
-hilb = transpose hilbertCoordinates(2,2)
+(L, K, f, M, g, pf) = extMod(p,n)
+hilb = hilbertCoordinates(p,n)
 R = ring hilb
-P2 = Proj R
-phi = rationalMapping(P2, P2, hilb)
-val = isBirationalMap(phi)
-val2 = isBirationalOntoImage(phi)
-clo = isEmbedding(phi)
-alpha = mapOntoImage(phi)
-baseLocusOfMap phi
+variables = join( for i in 0..(n-1) list R_i, {y} )
+S = ZZ/3[variables]
+f = map(S, R)
+N = ideal(f(hilb_(0,0)) - y^n)
+S = S/N
 
-R = ZZ/11[x,y,z]
-P2 = Proj R
-phi1 = rationalMapping(P2, P2, {y*z, x*z, x*y})
-phi2 = rationalMapping(R, R, matrix{{y*z, x*z, x*y}})
+X = Proj R
+Y = Proj S 
+phi = rationalMapping(Y,X,hilb)
+I = radical baseLocusOfMap phi
 
-isBirationalMap phi1
+src = Proj R/(radical baseLocusOfMap(phi))
+S' = singularLocus I
+dim S'
+
+
+isBirationalMap phi
+isEmbedding phi
+isBirationalOntoImage phi
+rationalPoints(I, Projective => true)
