@@ -32,7 +32,7 @@ extMod(ZZ, ZZ) := (p, n) -> (
 	x := symbol x;
 
 	k := (ZZ/p)[t];
-	k' := extField(t^n-1, Variable=>t);
+	if p != n then k' := extField(t^n-1, Variable=>t) else k' := ZZ/p;
 	K := k'[a_0 .. a_(n-1)];
 	l := ambient GF(p,n,Variable => x);
 	S := ambient l;
@@ -175,7 +175,7 @@ loadPackage "Hilbert90Geometry"
 -- loadPackage "RationalMaps"
 -- loadPackage "MultiprojectiveVarieties"
 
-p = 17; n = 3;
+p = 3; n = 3;
 
 (L, K, f, M, g, pf) = extMod(p,n)
 hilb = hilbertCoordinates(p,n)
@@ -190,6 +190,20 @@ X = Proj R
 Y = Proj S'
 phi = rationalMapping(Y,X,hilb)
 I = radical baseLocusOfMap phi
+
+L = matrix(S, {{-S_0*S_1 + S_1^2 - S_0*S_2 + S_0 + S_1 - S_2 + 1, -S_0*S_1 - S_1^2 + S_0*S_2 - S_2^2 - S_0 - S_1 + 1, S_0^2 + S_0*S_1 + S_1^2 - S_1*S_2 + S_2^2 + S_0 - S_1 - S_2 + 1}})
+inv = homogenize(L, y)
+psi = rationalMapping(X, Y, inv)
+isBirationalMap psi
+
+comp1 = psi * phi
+comp2 = phi * psi
+ident1 = rationalMapping(X, X, matrix id_R)
+ident2 = rationalMapping(Y, Y, matrix id_(S'))
+isBirationalMap comp1
+isBirationalMap comp2
+comp1 == ident1
+comp2 == ident2
 
 isBirationalMap phi
 isEmbedding phi
