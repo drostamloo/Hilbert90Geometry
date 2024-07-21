@@ -191,8 +191,9 @@ Y = Proj S'
 phi = rationalMapping(Y,X,hilb)
 I = radical baseLocusOfMap phi
 
-L = matrix(S, {{-S_0*S_1 + S_1^2 - S_0*S_2 + S_0 + S_1 - S_2 + 1, -S_0*S_1 - S_1^2 + S_0*S_2 - S_2^2 - S_0 - S_1 + 1, S_0^2 + S_0*S_1 + S_1^2 - S_1*S_2 + S_2^2 + S_0 - S_1 - S_2 + 1}})
-inv = homogenize(L, y)
+T = matrix(S, {{S_0^2 - S_0*S_1 + S_1^2 + S_1*S_2 + S_2^2 + S_0 - S_1 + S_2, S_0^2 - S_0*S_1 - S_1^2 - S_0*S_2 + S_1*S_2 - S_0 - S_1 + S_2, S_0^2 + S_0*S_2 + S_1*S_2 + S_0 - S_1 - S_2 + 1}})
+use S
+inv = homogenize(T, y)
 psi = rationalMapping(X, Y, inv)
 isBirationalMap psi
 
