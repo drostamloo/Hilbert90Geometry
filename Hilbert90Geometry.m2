@@ -32,8 +32,8 @@ extMod(ZZ, ZZ) := (p, n) -> (
 	x := symbol x;
 
 	k := (ZZ/p)[t];
-	if p != n then k' := extField(t^n-1, Variable=>t) else k' := ZZ/p;
-	K := k'[a_0 .. a_(n-1)];
+	k' := if p != n then extField(t^n-1, Variable => t) else ZZ/p;
+	K := k'[a_0 .. a_n];
 	l := ambient GF(p,n,Variable => x);
 	S := ambient l;
 	I := module ideal l;
@@ -57,7 +57,7 @@ galExtMod(Ring, Module) := (K, M) -> (
 galExtModAS = method()
 galExtModAS(Ring, Module) := (K, M) -> (
 	n := rank M;
-	map(K^n, n, (i,j) -> binomial(j,i))
+	map(K^n, n, (i,j) -> (-1)^(n-i) * binomial(j,i))
 )
 
 galExtModKummer = method()
@@ -72,16 +72,17 @@ galExtModKummer(Ring, Module) := (K, M) -> (
 
 multExtMod = method()
 multExtMod(Ring, Ring, RingMap, Matrix) := (L, K, f, coefs) -> (
-	n := numgens K;
+	n := numgens source coefs;
 	fieldGens := matrix{apply(n, i -> (L_0)^i)};
-	alpha := fieldGens * transpose(coefs); pushFwd(f, alpha)
+	alpha := fieldGens * transpose(coefs); 
+	pushFwd(f, alpha)
 )
 
 hilbertCoordinates = method()
 hilbertCoordinates(ZZ, ZZ) := (p, n) -> (
 	(L, K, f, M, g, pf) := extMod(p, n);
 	gal := galExtMod(K, M);
-	coefs := matrix{for i in 0..(n-1) list f(K_i)};
+	coefs := matrix{apply(n, i -> f(K_i))};
 	mult := multExtMod(L, K, f, coefs);
 	N := det mult;
 	Tcoefs := transpose coefs;
@@ -180,6 +181,7 @@ p = 3; n = 3;
 (L, K, f, M, g, pf) = extMod(p,n)
 hilb = hilbertCoordinates(p,n)
 R = ring hilb
+describe R
 variables = join( for i in 0..(n-1) list R_i, {y} )
 S = ZZ/p[variables]
 f = map(S, R)
@@ -191,11 +193,15 @@ Y = Proj S'
 phi = rationalMapping(Y,X,hilb)
 I = radical baseLocusOfMap phi
 
-T = matrix(S, {{S_0^2 - S_0*S_1 + S_1^2 + S_1*S_2 + S_2^2 + S_0 - S_1 + S_2, S_0^2 - S_0*S_1 - S_1^2 - S_0*S_2 + S_1*S_2 - S_0 - S_1 + S_2, S_0^2 + S_0*S_2 + S_1*S_2 + S_0 - S_1 - S_2 + 1}})
-use S
+T = matrix(S', {{S'_0^2 - S'_0*S'_1 + S'_1^2 + S'_1*S'_2 + S'_2^2 + S'_0 - S'_1 + S'_2, S'_0^2 - S'_0*S'_1 - S'_1^2 - S'_0*S'_2 + S'_1*S'_2 - S'_0 - S'_1 + S'_2, S'_0^2 + S'_0*S'_2 + S'_1*S'_2 + S'_0 - S'_1 - S'_2 + 1}})
+use S'
 inv = homogenize(T, y)
 psi = rationalMapping(X, Y, inv)
 isBirationalMap psi
+isBirationalMap phi
+isBirationalMap(phi, AssumeDominant => true)
+tau = inverseOfMap psi
+inverseOfMap psi == phi
 
 comp1 = psi * phi
 comp2 = phi * psi
