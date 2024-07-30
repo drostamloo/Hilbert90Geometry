@@ -176,17 +176,18 @@ loadPackage "Hilbert90Geometry"
 -- loadPackage "RationalMaps"
 -- loadPackage "MultiprojectiveVarieties"
 
-p = 3; n = 3;
+p = 5; n = 5;
 
 (L, K, f, M, g, pf) = extMod(p,n)
 hilb = hilbertCoordinates(p,n)
 R = ring hilb
-describe R
 variables = join( for i in 0..(n-1) list R_i, {y} )
 S = ZZ/p[variables]
 f = map(S, R)
 N = ideal(f(hilb_(0,0)) - y^n)
 S' = S/N
+
+isPrime (f(hilb_(0,0)) - y^n)
 
 X = Proj R
 Y = Proj S'

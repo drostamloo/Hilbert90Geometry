@@ -1,0 +1,284 @@
+%%% PACKAGES AND SETTINGS %%%
+
+% math packages
+\usepackage{mathtools}  % Includes amsmath
+\usepackage{amssymb}    % Math symbols such as \mathbb
+\usepackage{amsthm}	   % theorem environments
+\usepackage{xpatch}    % Patch amsthm \swappedhead to add period after theorem head
+\xpatchcmd\swappedhead{~}{.~}{}{}   % Add period after swapped-number theorem head
+\usepackage{stmaryrd}   % more symbols
+\usepackage{mathrsfs}   % RSFS font in math mode 
+\usepackage{extarrows}	% extra extensible arrows beyond those in mathtools/amsmath
+\usepackage{etoolbox}	% possibly for starting a new page after every solution
+
+% More extensible arrows
+\makeatletter
+\providecommand*{\twoheadrightarrowfill@}{%
+	\arrowfill@\relbar\relbar\twoheadrightarrow
+}
+\providecommand*{\twoheadleftarrowfill@}{%
+	\arrowfill@\twoheadleftarrow\relbar\relbar
+}
+\providecommand*{\xtwoheadrightarrow}[2][]{%
+	\ext@arrow 0579\twoheadrightarrowfill@{#1}{#2}%
+}
+\providecommand*{\xtwoheadleftarrow}[2][]{%
+	\ext@arrow 5097\twoheadleftarrowfill@{#1}{#2}%
+}
+\makeatother
+
+% typesetting sheaf Hom
+\usepackage{urwchancal} % \mathpzc (alternate mathcal): also lowercase.
+\DeclareFontFamily{OT1}{pzc}{}
+\DeclareFontShape{OT1}{pzc}{m}{it}{<-> s * [1.10] pzcmi7t}{}
+\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
+\usepackage{calligra}	% for alternative typesetting of sheaf Hom
+
+% other packages
+\usepackage{pgffor} % Used for looping through subfiles, but note that loops will break inverse search
+\usepackage{tikz-cd}
+\usepackage{quiver}
+\usepackage{graphicx}
+\graphicspath{ {../assets/} }
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{
+	pdfauthor={Daniel Rostamloo},
+    colorlinks=true,
+    linktoc=page,     %set to all if you want both sections and subsections linked
+	linkcolor=DarkBlue,	 %the value "." sets the link color to match the surrounding text color
+	citecolor=DarkBlue,
+	urlcolor=DarkBlue,
+	bookmarksnumbered,
+}
+
+% PDF Bookmark Settings
+\usepackage{bookmark}
+\bookmarksetup{numbered}
+
+\makeatletter
+\bookmarksetup{%
+	addtohook={%
+		\ifnum\toclevel@part=\bookmarkget{level}\relax
+			\renewcommand*{\numberline}[1]{Part #1. }%
+		\fi
+	},
+}
+\makeatother
+
+\makeatletter
+\bookmarksetup{%
+	addtohook={%
+		\ifnum\toclevel@chapter=\bookmarkget{level}\relax
+			\renewcommand*{\numberline}[1]{Chapter #1. }%
+		\fi
+	},
+}
+\makeatother
+
+\makeatletter
+\bookmarksetup{%
+	addtohook={%
+		\ifnum\toclevel@section=\bookmarkget{level}\relax
+			\renewcommand*{\numberline}[1]{#1. }%
+		\fi
+	},
+}
+\makeatother
+
+% Citation/referencing packages
+\usepackage[alphabetic]{amsrefs}
+\usepackage[capitalize]{cleveref}
+
+\crefname{exercise}{Exercise}{Exercises}
+\Crefname{exercise}{Exercise}{Exercises}
+\crefname{genericexercise}{Exercise}{Exercises}
+\Crefname{genericexercise}{Exercise}{Exercises}
+\crefname{theorem}{Theorem}{Theorems}
+\Crefname{theorem}{Theorem}{Theorems}
+\crefname{generictheorem}{Theorem}{Theorems}
+\Crefname{generictheorem}{Theorem}{Theorems}
+\crefname{lemma}{Lemma}{Lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{proposition}{Proposition}{Propositions}
+\Crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{fact}{Fact}{Facts}
+\Crefname{fact}{Fact}{Facts}
+\crefname{claim}{Claim}{Claims}
+\Crefname{claim}{Claim}{Claims}
+\crefname{genericdiscussion}{\S}{\S}
+\Crefname{genericdiscussion}{\S}{\S}
+\crefname{definition}{Definition}{Definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{remark}{Remark}{Remarks}
+\Crefname{remark}{Remark}{Remarks}
+
+% proper inline math display, adjust height for symbols like \sum
+%\everymath{\displaystyle}
+
+%%% THEOREM ENVIRONMENTS %%%
+
+\renewcommand\qedsymbol{$\blacksquare$}
+
+\newtheoremstyle{statement}%			% Name
+	{}%                                 % Space above
+	{}%                                 % Space below
+	{\itshape}%                         % Body font
+	{}%                                 % Indent amount
+	{\bfseries}%                        % Theorem head font
+	{: --- }%                           % Punctuation after theorem head
+	{10pt}%                                % Space after theorem head, ' ', or \newline
+	{}%									% Custom head spec
+
+\newtheoremstyle{definition}%			% Name
+	{}%                                 % Space above
+	{}%                                 % Space below
+	{\mdseries}%                        % Body font
+	{}%                                 % Indent amount
+	{\itshape}%                         % Theorem head font
+	{.}%                                % Punctuation after theorem head
+	{10pt}%                                % Space after theorem head, ' ', or \newline
+	{}%									% Custom head spec
+
+\newtheoremstyle{discussion}%			% Name
+	{}%									% Space above
+	{}%									% Space below
+	{\mdseries}%						% Body font
+	{}%									% Indent amount
+	{\bfseries}%						% Theorem head font
+	{.}%								% Punctuation after theorem head
+	{10pt}%								% Space after theorem head, ' ', or \newline
+	{}%									% Custom head spec
+
+\newtheoremstyle{exercise}%             % Name
+	{}%                                 % Space above
+	{}%                                 % Space below
+	{\mdseries}%                        % Body font
+  	{}%                                 % Indent amount
+  	{}%                            		% Theorem head font
+  	{.}%                                % Punctuation after theorem head
+  	{10pt}%                             % Space after theorem head, ' ', or \newline
+  	{\textbf{\thmnumber{#2}.} \textsc{\thmname{#1}}\thmnote{ (#3)}}%		% Custom head spec
+
+% Exercises
+
+\theoremstyle{exercise}
+\newtheorem{exercise}{Exercise}[section]
+
+\theoremstyle{exercise}
+\newcommand{\thisexercisename}{}
+\newtheorem{genericexercise}[exercise]{\thisexercisename}
+\newenvironment{namedexercise}[1]
+	{\renewcommand{\thisexercisename}{#1}%
+	\begin{genericexercise}}
+	{\end{genericexercise}}
+
+
+\renewcommand*{\theexercise}{\thesection.\Alph{exercise}} % Redefine exercise counter to use letters instead of numbers
+
+% Gives \begin{solution} same formating as \begin{proof}
+
+\newenvironment{solution}
+  {\begin{proof}[Solution]}
+{\end{proof}\clearpage}
+
+%\AtEndCommand{qedsymbol}{%
+%	\clearpage%
+%}
+
+% Generic Statements
+
+\theoremstyle{statement}
+\swapnumbers 
+% This is done to make the theorem counter appear first for the theorem environments created below. We cannot use the \swapnumbers command for the exercise environments above because the theorem head for the exercise environment uses multiple font styles which are best defined manually in the custom head spec.
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{fact}[theorem]{Fact}
+\newtheorem{claim}[theorem]{Claim}
+
+% Discussions and Statements with Custom Names (Discussions are the designated format for examples)
+
+\newcommand{\thistheoremname}{}
+\newtheorem{generictheorem}[theorem]{\thistheoremname}
+\newenvironment{namedtheorem}[1]
+	{\renewcommand{\thistheoremname}{#1}%
+	\begin{generictheorem}}
+	{\end{generictheorem}}
+
+\theoremstyle{discussion}
+\newcommand{\thisdiscussionname}{}
+\newtheorem{genericdiscussion}[theorem]{\thisdiscussionname}
+\newenvironment{nameddiscussion}[1]
+	{\renewcommand{\thisdiscussionname}{#1}%
+	\begin{genericdiscussion}}
+	{\end{genericdiscussion}}
+
+% Definitions and Remarks
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+%%% CUSTOM MATH OPERATORS %%%
+
+% Algebraic Geometry
+
+\DeclareMathOperator{\Spec}{Spec}
+\DeclareMathOperator{\Proj}{Proj}
+\DeclareMathOperator{\Pic}{Pic}
+\DeclareMathOperator{\Div}{div}
+\DeclareMathOperator{\CaDiv}{CaDiv}
+\DeclareMathOperator{\Cl}{Cl}
+\DeclareMathOperator{\CaCl}{CaCl}
+\DeclareMathOperator{\HOM}{\mathpzc{Hom}}
+\DeclareMathOperator{\EXT}{\mathpzc{Ext}}
+\DeclareMathOperator{\Supp}{Supp}
+\DeclareMathOperator{\Bl}{Bl}
+
+% alternative sheaf Hom and sheaf Ext typesetting
+\DeclareMathOperator{\SheafHom}{\mathscr{H}\kern -3pt \text{{\calligra\large om}}\,}
+\DeclareMathOperator{\SheafExt}{\mathscr{E}\text{\kern -3pt {\calligra\large xt}}\,}
+
+% Other Algebra
+
+\DeclareMathOperator{\pr}{pr}
+\DeclareMathOperator{\nil}{nil}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\codim}{codim}
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\End}{End}
+\DeclareMathOperator{\colim}{colim}
+\DeclareMathOperator{\characteristic}{char}
+\DeclareMathOperator{\id}{id}
+\DeclareMathOperator{\Span}{Span}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\N}{N}
+\DeclareMathOperator{\im}{im}
+\DeclareMathOperator{\coim}{coim}
+\DeclareMathOperator{\coker}{coker}
+\DeclareMathOperator{\HH}{H}
+\DeclareMathOperator{\hh}{h}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\acts}{\curvearrowright}
+\DeclareMathOperator{\trdeg}{tr. deg}
+\DeclareMathOperator{\Tor}{Tor}
+\DeclareMathOperator{\Ext}{Ext}
+\DeclareMathOperator{\Gal}{Gal}
+\DeclareMathOperator{\sep}{sep}
+\DeclareMathOperator{\Syz}{Syz}
+\DeclareMathOperator{\pd}{pd}
+\DeclareMathOperator{\depth}{depth}
+\DeclareMathOperator{\bm}{bm}
+\DeclareMathOperator{\burch}{burch}
+\DeclareMathOperator{\length}{length}
+\DeclareMathOperator{\socle}{socle}
+\DeclareMathOperator{\Char}{char}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\Ann}{Ann}
+\DeclareMathOperator{\Ass}{Ass}
