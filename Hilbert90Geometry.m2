@@ -10,7 +10,7 @@ newPackage(
 		{Name => "Daniel Rostamloo", Email => "rostam@uw.edu", Homepage => "drostamloo.github.io"}},
 		AuxiliaryFiles => false,
 		DebuggingMode => true,
-		PackageExports => {"RationalPoints2", "PushForward", "RationalMaps", "MultiprojectiveVarieties"}
+		PackageExports => {"RationalPoints2", "PushForward", "Cremona", "MultiprojectiveVarieties"}
 		)
 
 export {
@@ -19,8 +19,8 @@ export {
 	"galExtModAS", -- the Artin-Schreier case of galExtMod
 	"galExtModKummer", -- the Kummer case of galExtMod
 	"multExtMod", -- produces the matrix over the ground field associated to multiplication by an element of the field extension with a choice of coefficients
-	"hilbertCoordinates", -- produces a matrix representing the coordinates of the mapping given by interpreting Hilbert's Theorem 90 geometrically
-	"isBirationalEmbedding" -- returns a pair of truth values indicating whether the rational map given by hilbertCoordinates is in fact birational or a closed embedding, respectively
+	"hilbertCoordinates", -- produces matrices representing the coordinates of the mapping given by interpreting Hilbert's Theorem 90 geometrically, and its inverse
+	"inverseTest" -- compute the rational map and its inverse and check if their compositions are equal to the identity on a dense open set
 	}
 
 -* Code section *-
@@ -33,7 +33,7 @@ extMod(ZZ, ZZ) := (p, n) -> (
 
 	k := (ZZ/p)[t];
 	k' := if p != n then extField(t^n-1, Variable => t) else ZZ/p;
-	K := k'[a_0 .. a_n];
+	K := k'[a_0 .. a_(n-1)];
 	l := ambient GF(p,n,Variable => x);
 	S := ambient l;
 	I := module ideal l;
@@ -41,10 +41,19 @@ extMod(ZZ, ZZ) := (p, n) -> (
 	f' := map(S', S);
 	I' := ideal tensor(f', I);
 	L := S'/I';
-
+	
 	f := map(L, K);
 	(M, g, pf) := pushFwd(f);
-	(L, K, f, M, g, pf)
+	
+	use L;
+	z := traceSearch(n,f, x); -- element of nonzero trace 
+	
+	(L, K, f, M, g, pf, z)
+)
+
+traceSearch = method() -- check all powers of x, one must have nonzero trace
+traceSearch(ZZ, RingMap, RingElement) := (n, f, x) -> (
+	for i from 0 to n - 1 do (if trace(pushFwd(f, matrix{{x^i}})) != 0 then break x^i)
 )
 
 galExtMod = method()
@@ -57,7 +66,7 @@ galExtMod(Ring, Module) := (K, M) -> (
 galExtModAS = method()
 galExtModAS(Ring, Module) := (K, M) -> (
 	n := rank M;
-	map(K^n, n, (i,j) -> (-1)^(n-i) * binomial(j,i))
+	map(K^n, n, (i,j) -> binomial(j,i))
 )
 
 galExtModKummer = method()
@@ -67,6 +76,7 @@ galExtModKummer(Ring, Module) := (K, M) -> (
 	inc := map(K, k');
 	n := rank M;
 	zetas := for i in 0..(n-1) list inc(t^i);
+
 	diagonalMatrix(K, zetas)
 )
 
@@ -74,38 +84,62 @@ multExtMod = method()
 multExtMod(Ring, Ring, RingMap, Matrix) := (L, K, f, coefs) -> (
 	n := numgens source coefs;
 	fieldGens := matrix{apply(n, i -> (L_0)^i)};
-	alpha := fieldGens * transpose(coefs); 
-	pushFwd(f, alpha)
+	alpha := fieldGens * transpose(coefs); -- 1x1 matrix containing element of field extension coordinatized by coefs 
+
+	pushFwd(f, alpha) -- pushing forward here yields an nxn matrix representing multiplication by the element
 )
 
 hilbertCoordinates = method()
 hilbertCoordinates(ZZ, ZZ) := (p, n) -> (
-	(L, K, f, M, g, pf) := extMod(p, n);
+	(L, K, f, M, g, pf, z) := extMod(p, n);
 	gal := galExtMod(K, M);
 	coefs := matrix{apply(n, i -> f(K_i))};
 	mult := multExtMod(L, K, f, coefs);
 	N := det mult;
 	Tcoefs := transpose coefs;
-	factors := multExtMod(L, K, f, coefs);
-	for i in 2..n do factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
-	matrix {{N}} | transpose(factors * transpose matrix{ join( {1}, for i in 2..n list 0 ) })
+	
+	factors := multExtMod(L, K, f, coefs); -- initialize factors in product
+	for i in 2..n do (
+		factors *= multExtMod(L, K, f, transpose (gal^i * Tcoefs));
+	);
+	hilb := transpose(factors * transpose matrix{ join( {1}, for i in 2..n list 0)}) | matrix {{N}}; -- apply matrix to 1, take transpose, adjoin norm
+	
+	hTerms := new MutableList from (for i from 0 to n - 1 list gal^i); -- initialize a mutable list of terms in the sum for h operator
+	for i from 0 to n - 1 do (
+		for j from 0 to i-1 do (
+			hTerms#i = multExtMod(L,K,f, transpose(gal^j * Tcoefs))*(hTerms#i); --left multiply by galois translates of generic element
+		);
+	);
+	h := sum(new List from hTerms);
+	inv := transpose(h * pf(z)); -- apply h to z, then take transpose
+
+	(hilb, inv)
 )
 
-isBirationalEmbedding = method()
-isBirationalEmbedding(ZZ, ZZ) := (p, n) -> (
-	hilb := hilbertCoordinates(p, n);
+
+inverseTest = method()
+inverseTest(ZZ, ZZ) := (p, n) -> (
+	(hilb, inv) := hilbertCoordinates(p, n);
 	R := ring hilb;
 	y := symbol y;
-	variables := join( for i in 0..(n-1) list R_i, {y} );
-	S := ZZ/p[variables];
+	variables := join(for i in 0..(n-1) list R_i, {y});
+	k := coefficientRing(R);
+	S := k[variables];
 	f := map(S, R);
-	N := ideal(f(hilb_(0,0)) - y^n);
+	N := ideal(f(hilb_(0,n)) - y^n);
 	S' := S/N;
-	X := Proj R;
-	Y := Proj S';
-	phi := rationalMapping(Y,X,hilb);
+	residue := map(S',S);
 
-	(isBirationalMap(phi, Verbosity => 0, AssumeDominant => true), isEmbedding(phi, Verbosity => 0, AssumeDominant => true))
+	phi := rationalMap(R, S', hilb);
+	
+	invHomogenized := homogenize(f(inv), y);
+	invResidues := residue(invHomogenized);
+	psi := rationalMap(S', R, invResidues);
+	
+	id1 := rationalMap(R,R);
+	id2 := rationalMap(S',S');
+		
+	(phi, psi, phi*psi, psi*phi, phi*psi == id1, psi*phi == id2)
 )
 
 -* Documentation section *-
@@ -173,47 +207,5 @@ viewHelp "Hilbert90Geometry"
 loadPackage "Hilbert90Geometry"
 -- loadPackage "RationalPoints2"
 -- loadPackage "PushForward"
--- loadPackage "RationalMaps"
+-- loadPackage "Cremona"
 -- loadPackage "MultiprojectiveVarieties"
-
-p = 5; n = 5;
-
-(L, K, f, M, g, pf) = extMod(p,n)
-hilb = hilbertCoordinates(p,n)
-R = ring hilb
-variables = join( for i in 0..(n-1) list R_i, {y} )
-S = ZZ/p[variables]
-f = map(S, R)
-N = ideal(f(hilb_(0,0)) - y^n)
-S' = S/N
-
-isPrime (f(hilb_(0,0)) - y^n)
-
-X = Proj R
-Y = Proj S'
-phi = rationalMapping(Y,X,hilb)
-I = radical baseLocusOfMap phi
-
-T = matrix(S', {{S'_0^2 - S'_0*S'_1 + S'_1^2 + S'_1*S'_2 + S'_2^2 + S'_0 - S'_1 + S'_2, S'_0^2 - S'_0*S'_1 - S'_1^2 - S'_0*S'_2 + S'_1*S'_2 - S'_0 - S'_1 + S'_2, S'_0^2 + S'_0*S'_2 + S'_1*S'_2 + S'_0 - S'_1 - S'_2 + 1}})
-use S'
-inv = homogenize(T, y)
-psi = rationalMapping(X, Y, inv)
-isBirationalMap psi
-isBirationalMap phi
-isBirationalMap(phi, AssumeDominant => true)
-tau = inverseOfMap psi
-inverseOfMap psi == phi
-
-comp1 = psi * phi
-comp2 = phi * psi
-ident1 = rationalMapping(X, X, matrix id_R)
-ident2 = rationalMapping(Y, Y, matrix id_(S'))
-isBirationalMap comp1
-isBirationalMap comp2
-comp1 == ident1
-comp2 == ident2
-
-isBirationalMap phi
-isEmbedding phi
-mapOntoImage phi
-isBirationalOntoImage phi
